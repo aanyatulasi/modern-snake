@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Modern Snake Game</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Add Chart.js for leaderboard graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Leaderboard Styles -->
+    <link rel="stylesheet" href="src/features/leaderboard/leaderboard.css">
 </head>
 <body>
     <div class="game-container">
@@ -28,6 +33,26 @@
             </div>
         </div>
     </div>
+    <!-- Game Scripts -->
     <script type="module" src="game.js"></script>
+    
+    <!-- Leaderboard Initialization -->
+    <script type="module">
+        import { LeaderboardUI } from './src/features/leaderboard/LeaderboardUI.js';
+        
+        // Wait for the game to be fully loaded
+        window.addEventListener('DOMContentLoaded', () => {
+            // The game instance will be available globally after initialization
+            window.leaderboardUI = new LeaderboardUI(window.game);
+            
+            // Add click handler for leaderboard button
+            const leaderboardBtn = document.getElementById('leaderboardBtn');
+            if (leaderboardBtn) {
+                leaderboardBtn.addEventListener('click', () => {
+                    window.leaderboardUI.toggle();
+                });
+            }
+        });
+    </script>
 </body>
 </html>
