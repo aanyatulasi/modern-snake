@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Modern Snake - Test Harness</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body { padding: 12px; }
+    .panel { background:#1b1b1b; border:1px solid #2a2a2a; border-radius:8px; padding:12px; margin-bottom:12px; }
+    .row { display:flex; gap:8px; flex-wrap:wrap; }
+    button { background:#2d2d2d; color:white; border:1px solid #3a3a3a; border-radius:6px; padding:8px 10px; cursor:pointer; }
+    button:hover { background:#3a3a3a; }
+    .label { color:#bbb; font-size:12px; }
+    .badge { display:inline-block; background:#333; color:#eee; padding:2px 6px; border-radius:10px; font-size:12px; margin-left:6px; }
+    #log { background:#0f0f0f; height:140px; overflow:auto; font-family:monospace; font-size:12px; padding:8px; border-radius:6px; }
+  </style>
+</head>
+<body>
+  <h2>Modern Snake - Test Harness <span id="branch" class="badge"></span></h2>
+
+  <div class="panel">
+    <div class="row">
+      <button id="start">Start Game</button>
+      <button id="restart">Restart</button>
+      <button id="toggle-debug">Toggle Debug Logs</button>
+      <button id="step">Step Once</button>
+    </div>
+    <div class="row" style="margin-top:8px;">
+      <span class="label">Cheat Codes: 1)⚡ 2)🐌 3)🛡️ 4)2x 5)🎯 6)👻  F)Eat Food  W)Wall Crash  A)Self Crash  T)Spawn Pickup  I)Toggle AI</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Power-ups</h3>
+    <div class="row">
+      <button data-pu="speed">Activate ⚡ Speed (5s)</button>
+      <button data-pu="slow">Activate 🐌 Slow (3s)</button>
+      <button data-pu="shield">Activate 🛡️ Shield (3s)</button>
+      <button data-pu="double">Activate 2️⃣ Double (10s)</button>
+      <button data-pu="magnet">Activate 🎯 Magnet (5s)</button>
+      <button data-pu="ghost">Activate 👻 Ghost (3s)</button>
+      <button id="spawn-pick">Spawn Random Pickup</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>AI & Collision Tests</h3>
+    <div class="row">
+      <button id="toggle-ai">Toggle AI Opponent</button>
+      <button id="force-wall">Force Wall Collision</button>
+      <button id="force-self">Force Self Collision</button>
+      <button id="eat-food">Force Eat Food</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Logs</h3>
+    <div id="log"></div>
+  </div>
+
+  <div class="game-container">
+    <div class="game-header">
+      <h1>Snake Game - Test</h1>
+      <div class="score-container">
+        <span>Score: </span>
+        <span id="score">0</span>
+      </div>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+    <div class="game-controls" style="display:none;"></div>
+  </div>
+
+  <script type="module">
+    import { CONFIG } from './config.js';
+    import './powerups.js';
+    import './game.js';
+
+    const $ = (id)=>document.getElementById(id);
+    const logEl = $('log');
+    let debug = false;
+    let aiOn = false;
+    let aiTimer = null;
+
+    function log(msg){
+      if(!debug) return;
+      const time = new Date().toLocaleTimeString();
+      const line = document.createElement('div');
+      line.textContent = `[${time}] ${msg}`;
+      logEl.appendChild(line);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function ensureGameReady() {
+      if (!window.game) {
+        log('Game not initialized yet. Click Start.');
+        return false;
+      }
+      return true;
+    }
+
+    function activate(type) {
+      if (!ensureGameReady()) return;
+      const now = performance.now();
+      window.game.powerups.activate(type, now);
+      log(`Activated ${type}`);
+    }
+
+    function spawnPickup() {
+      if (!ensureGameReady()) return;
+      const now = performance.now();
+      window.game.powerups.spawnRandom(now);
+      log('Spawned random pickup');
+    }
+
+    function toggleAI() {
+      if (!ensureGameReady()) return;
+      aiOn = !aiOn;
+      clearInterval(aiTimer);
+      if (aiOn) {
+        aiTimer = setInterval(() => {
+          const g = window.game;
+          if (g.gameOver) return;
+          const head = g.snake[0];
+          const food = g.food;
+          if (!head || !food) return;
+          const dx = Math.sign(food.x - head.x);
+          const dy = Math.sign(food.y - head.y);
+          // Prefer horizontal move if safe
+          let nx = dx !== 0 ? { x: dx, y: 0 } : { x: 0, y: dy };
+          // Avoid 180 turn
+          if (g.direction.x === -nx.x && g.direction.y === -nx.y) {
+            nx = dy !== 0 ? { x: 0, y: dy } : { x: dx, y: 0 };
+          }
+          g.nextDirection = nx;
+        }, 120);
+      }
+      log(`AI ${aiOn ? 'ON' : 'OFF'}`);
+    }
+
+    function forceWall() {
+      if (!ensureGameReady()) return;
+      const g = window.game;
+      // Aim toward nearest wall
+      const head = g.snake[0];
+      const toLeft = head.x;
+      const toRight = CONFIG.TILE_COUNT - 1 - head.x;
+      const toTop = head.y;
+      const toBottom = CONFIG.TILE_COUNT - 1 - head.y;
+      const min = Math.min(toLeft, toRight, toTop, toBottom);
+      if (min === toLeft) g.nextDirection = { x: -1, y: 0 };
+      else if (min === toRight) g.nextDirection = { x: 1, y: 0 };
+      else if (min === toTop) g.nextDirection = { x: 0, y: -1 };
+      else g.nextDirection = { x: 0, y: 1 };
+      log('Forcing wall collision path');
+    }
+
+    function forceSelf() {
+      if (!ensureGameReady()) return;
+      const g = window.game;
+      // Bend the snake back into itself by placing food behind it
+      const head = g.snake[0];
+      const back = g.snake[2] || g.snake[g.snake.length-1];
+      if (back) {
+        g.food = { x: back.x, y: back.y };
+        log('Placing food on snake body to induce self collision soon');
+      }
+    }
+
+    function eatFood() {
+      if (!ensureGameReady()) return;
+      const g = window.game;
+      const head = g.snake[0];
+      g.food = { x: head.x, y: head.y };
+      log('Forcing eat food');
+    }
+
+    // Wire UI
+    $('start').addEventListener('click', () => {
+      const btn = $('start');
+      if (!window.game) return; // created in DOMContentLoaded from game.js
+      window.game.startGame();
+      btn.textContent = 'Start Game';
+      log('Game started');
+    });
+
+    $('restart').addEventListener('click', () => {
+      if (!ensureGameReady()) return;
+      window.game.startGame();
+      log('Game restarted');
+    });
+
+    $('toggle-debug').addEventListener('click', () => {
+      debug = !debug;
+      log(`Debug ${debug ? 'ON' : 'OFF'}`);
+    });
+
+    $('step').addEventListener('click', () => {
+      if (!ensureGameReady()) return;
+      // Nudge game one update by faking lastUpdateTime
+      window.game.lastUpdateTime = performance.now() - window.game.updateInterval;
+      log('Stepped one frame');
+    });
+
+    document.querySelectorAll('[data-pu]').forEach(btn => {
+      btn.addEventListener('click', () => activate(btn.dataset.pu));
+    });
+
+    $('spawn-pick').addEventListener('click', spawnPickup);
+    $('toggle-ai').addEventListener('click', toggleAI);
+    $('force-wall').addEventListener('click', forceWall);
+    $('force-self').addEventListener('click', forceSelf);
+    $('eat-food').addEventListener('click', eatFood);
+
+    // Cheat codes
+    document.addEventListener('keydown', (e) => {
+      const k = e.key.toLowerCase();
+      if (k === '1') activate('speed');
+      if (k === '2') activate('slow');
+      if (k === '3') activate('shield');
+      if (k === '4') activate('double');
+      if (k === '5') activate('magnet');
+      if (k === '6') activate('ghost');
+      if (k === 'f') eatFood();
+      if (k === 'w') forceWall();
+      if (k === 'a') forceSelf();
+      if (k === 't') spawnPickup();
+      if (k === 'i') toggleAI();
+    });
+
+    // Debug ticker
+    setInterval(() => {
+      if (!debug || !window.game || window.game.gameOver) return;
+      const g = window.game;
+      const head = g.snake[0];
+      const act = Array.from(g.powerups.active.keys());
+      log(`pos=(${head.x},${head.y}) score=${g.score} PU=[${act.join(',')}]`);
+    }, 300);
+
+    // Show branch (best effort via global variable; optional)
+    fetch('.git/HEAD').then(()=>{
+      // Not accessible from file:// typically; ignore errors
+    }).catch(()=>{});
+    $('branch').textContent = 'feature/powerups';
+  </script>
+</body>
+</html>

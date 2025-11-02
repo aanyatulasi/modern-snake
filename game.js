@@ -424,6 +424,9 @@ class Game {
 // Initialize the game when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
   const game = new Game();
+  if (typeof window !== 'undefined') {
+    window.game = game;
+  }
 });
 
 // Expose CONFIG to the class so powerups.js can read tile count
