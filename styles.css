@@ -1,0 +1,118 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #0a0a0a;
+    color: #ffffff;
+}
+
+.game-container {
+    text-align: center;
+    padding: 2rem;
+    border-radius: 12px;
+    background-color: #121212;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 100%;
+}
+
+.game-header {
+    margin-bottom: 1.5rem;
+}
+
+h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(90deg, #4CAF50, #8BC34A);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.score-container {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+#gameCanvas {
+    background-color: #121212;
+    border: 2px solid #1E1E1E;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 400px;
+    height: 400px;
+    display: block;
+    margin: 0 auto;
+}
+
+.game-controls {
+    margin-top: 1.5rem;
+}
+
+button {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    margin: 0.5rem;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+.mobile-controls {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 1rem;
+}
+
+.mobile-controls > div {
+    display: flex;
+    gap: 2rem;
+    margin: 0.5rem 0;
+}
+
+#startBtn {
+    background: linear-gradient(135deg, #2196F3, #1976D2);
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+}
+
+#startBtn:hover {
+    background: linear-gradient(135deg, #1E88E5, #1565C0);
+}
+
+@media (max-width: 500px) {
+    .game-container {
+        padding: 1rem;
+    }
+    
+    #gameCanvas {
+        height: 300px;
+    }
+    
+    .mobile-controls {
+        display: flex;
+    }
+}
