@@ -1,4 +1,5 @@
 import { CONFIG } from './config.js';
+import { PresentationMode } from './src/presentation.js';
 
 class Game {
     constructor() {
@@ -12,6 +13,9 @@ class Game {
         this.setupEventListeners();
         this.resizeCanvas();
         window.addEventListener('resize', () => this.resizeCanvas());
+        
+        // Initialize presentation mode
+        this.presentationMode = new PresentationMode(this);
     }
 
     resetGame() {
