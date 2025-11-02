@@ -100,21 +100,46 @@ class Game {
     }
 
     handleKeyDown(e) {
+        // Prevent default for arrow keys to stop page scrolling
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+            e.preventDefault();
+        }
+
+        // Presentation mode controls (handled by PresentationMode class)
+        if (this.presentationMode?.isActive) {
+            // Let presentation mode handle its own key events first
+            switch (e.key.toLowerCase()) {
+                case 'p': // Toggle presentation mode
+                case 'r': // Toggle replay
+                case 't': // Toggle tutorial
+                case 's': // Toggle statistics
+                case 'd': // Toggle demo mode
+                    return; // Let the presentation mode handle these
+            }
+        }
+
+        // Game controls
         switch (e.key) {
-            case CONFIG.CONTROLS.ARROW_UP:
-                this.handleDirectionChange(0, -1);
+            case 'ArrowUp':
+                if (this.direction.y === 0) this.nextDirection = { x: 0, y: -1 };
                 break;
-            case CONFIG.CONTROLS.ARROW_DOWN:
-                this.handleDirectionChange(0, 1);
+            case 'ArrowDown':
+                if (this.direction.y === 0) this.nextDirection = { x: 0, y: 1 };
                 break;
-            case CONFIG.CONTROLS.ARROW_LEFT:
-                this.handleDirectionChange(-1, 0);
+            case 'ArrowLeft':
+                if (this.direction.x === 0) this.nextDirection = { x: -1, y: 0 };
                 break;
-            case CONFIG.CONTROLS.ARROW_RIGHT:
-                this.handleDirectionChange(1, 0);
+            case 'ArrowRight':
+                if (this.direction.x === 0) this.nextDirection = { x: 1, y: 0 };
                 break;
-            case CONFIG.CONTROLS.SPACE:
+            case ' ':
                 if (this.gameOver) this.startGame();
+                break;
+            case 'p': // Toggle presentation mode
+            case 'P':
+                if (this.presentationMode) {
+                    this.presentationMode.togglePresentationMode();
+                }
                 break;
             case CONFIG.CONTROLS.ESC:
                 if (!this.gameOver) this.gameOver = true;
@@ -134,19 +159,36 @@ class Game {
     }
 
     gameStep(timestamp) {
-        // Calculate time since last update
+        if (!this.lastUpdateTime) this.lastUpdateTime = timestamp;
         const deltaTime = timestamp - this.lastUpdateTime;
-        
-        // Only update at the specified interval
-        if (deltaTime >= this.updateInterval) {
+
+        if (deltaTime > this.updateInterval) {
             this.lastUpdateTime = timestamp - (deltaTime % this.updateInterval);
             
-            if (!this.gameOver) {
+            // Update presentation mode
+            if (this.presentationMode) {
+                this.presentationMode.update();
+                
+                // Skip game update if in replay mode
+                if (this.presentationMode.replayMode) {
+                    this.presentationMode.updateReplay();
+                } else if (this.presentationMode.demoMode) {
+                    this.presentationMode.updateAIBattle();
+                } else {
+                    this.update();
+                }
+            } else {
                 this.update();
             }
+            
             this.draw();
+            
+            // Update camera if in presentation mode
+            if (this.presentationMode?.isActive) {
+                this.presentationMode.updateCamera();
+            }
         }
-        
+
         if (!this.gameOver) {
             this.gameLoop = requestAnimationFrame((ts) => this.gameStep(ts));
         }
